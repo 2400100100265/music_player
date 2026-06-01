@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Music Player</title>
+
+<style>
+    body {
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #0f172a, #1e293b);
+        font-family: Arial, sans-serif;
+        color: white;
+    }
+
+    .player {
+        width: 350px;
+        background: #111827;
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .title {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+
+    .title h2 {
+        font-size: 20px;
+        color: #38bdf8;
+    }
+
+    .title p {
+        font-size: 14px;
+        color: #94a3b8;
+    }
+
+    audio {
+        display: none;
+    }
+
+    .controls {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    button {
+        padding: 10px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        background: #334155;
+        color: white;
+        transition: 0.3s;
+    }
+
+    button:hover {
+        background: #475569;
+    }
+
+    .play {
+        background: #38bdf8;
+        color: black;
+    }
+
+    .progress-container {
+        width: 100%;
+        background: #334155;
+        height: 6px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 15px;
+    }
+
+    .progress {
+        height: 6px;
+        background: #38bdf8;
+        width: 0%;
+        border-radius: 5px;
+    }
+
+    .time {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        margin-top: 5px;
+        color: #94a3b8;
+    }
+
+    .volume {
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    input[type="range"] {
+        width: 100%;
+    }
+
+    .playlist {
+        margin-top: 15px;
+        max-height: 120px;
+        overflow-y: auto;
+    }
+
+    .song {
+        padding: 8px;
+        background: #1f2937;
+        margin: 5px 0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    .song:hover {
+        background: #374151;
+    }
+
+    .active {
+        background: #38bdf8;
+        color: black;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="player">
+
+    <div class="title">
+        <h2 id="songTitle">Song Title</h2>
+        <p id="artist">Artist</p>
+    </div>
+
+    <audio id="audio"></audio>
+
+    <div class="progress-container" onclick="seek(event)">
+        <div class="progress" id="progress"></div>
+    </div>
+
+    <div class="time">
+        <span id="current">0:00</span>
+        <span id="duration">0:00</span>
+    </div>
+
+    <div class="controls">
+        <button onclick="prev()">⏮</button>
+        <button class="play" onclick="togglePlay()" id="playBtn">▶</button>
+        <button onclick="next()">⏭</button>
+    </div>
+
+    <div class="volume">
+        🔊
+        <input type="range" min="0" max="1" step="0.01" onchange="setVolume(this.value)">
+    </div>
+
+    <div class="playlist" id="playlist"></div>
+
+</div>
+
+<script>
+const songs = [
+    {
+        title: "Summer Vibes",
+        artist: "Unknown Artist",
+        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+    },
+    {
+        title: "Calm Waves",
+        artist: "DJ Relax",
+        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
+    },
+    {
+        title: "Night Drive",
+        artist: "Neon Beats",
+        src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
+    }
+];
+
+let currentIndex = 0;
+const audio = document.getElementById("audio");
+const title = document.getElementById("songTitle");
+const artist = document.getElementById("artist");
+const progress = document.getElementById("progress");
+const currentTimeEl = document.getElementById("current");
+const durationEl = document.getElementById("duration");
+const playBtn = document.getElementById("playBtn");
+
+function loadSong(index){
+    const song = songs[index];
+    audio.src = song.src;
+    title.innerText = song.title;
+    artist.innerText = song.artist;
+}
+
+function playSong(){
+    audio.play();
+    playBtn.innerText = "⏸";
+}
+
+function pauseSong(){
+    audio.pause();
+    playBtn.innerText = "▶";
+}
+
+function togglePlay(){
+    if(audio.paused){
+        playSong();
+    } else {
+        pauseSong();
+    }
+}
+
+function next(){
+    currentIndex = (currentIndex + 1) % songs.length;
+    loadSong(currentIndex);
+    playSong();
+    updatePlaylist();
+}
+
+function prev(){
+    currentIndex = (currentIndex - 1 + songs.length) % songs.length;
+    loadSong(currentIndex);
+    playSong();
+    updatePlaylist();
+}
+
+function setVolume(value){
+    audio.volume = value;
+}
+
+audio.addEventListener("timeupdate", () => {
+    const progressPercent = (audio.currentTime / audio.duration) * 100;
+    progress.style.width = progressPercent + "%";
+
+    currentTimeEl.innerText = formatTime(audio.currentTime);
+    durationEl.innerText = formatTime(audio.duration);
+});
+
+audio.addEventListener("ended", () => {
+    next(); // autoplay
+});
+
+function seek(e){
+    const width = e.currentTarget.clientWidth;
+    const clickX = e.offsetX;
+    audio.currentTime = (clickX / width) * audio.duration;
+}
+
+function formatTime(time){
+    if(isNaN(time)) return "0:00";
+    const min = Math.floor(time / 60);
+    const sec = Math.floor(time % 60);
+    return `${min}:${sec < 10 ? "0"+sec : sec}`;
+}
+
+// Playlist
+const playlistEl = document.getElementById("playlist");
+
+function renderPlaylist(){
+    playlistEl.innerHTML = "";
+    songs.forEach((song, index) => {
+        const div = document.createElement("div");
+        div.classList.add("song");
+        if(index === currentIndex) div.classList.add("active");
+
+        div.innerText = song.title + " - " + song.artist;
+
+        div.onclick = () => {
+            currentIndex = index;
+            loadSong(currentIndex);
+            playSong();
+            updatePlaylist();
+        };
+
+        playlistEl.appendChild(div);
+    });
+}
+
+function updatePlaylist(){
+    document.querySelectorAll(".song").forEach((el, i) => {
+        el.classList.toggle("active", i === currentIndex);
+    });
+}
+
+// init
+loadSong(currentIndex);
+renderPlaylist();
+setVolume(0.7);
+</script>
+
+</body>
+</html>
